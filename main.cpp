@@ -1,27 +1,43 @@
 #include <iostream>
-long int powermod(long int num,long int exp,long int mod);
-long int multmod(long int num,long int num2,long int mod);
-bool test(long int pubexp,long int priexp, long int mod);
+#include <stdlib.h>
+#include <gmp.h>
+void multmod(mpz_t result,mpz_t num,mpz_t num2,mpz_t mod);
+void powermod(mpz_t result,mpz_t num,mpz_t exp,mpz_t mod);
+bool test(mpz_t pubexp,mpz_t priexp, mpz_t mod);
  int main() {
-	long int testnumber = 2;
-	long int testnumber2 = 2;
-	long int mod = 11929;
-	long int pubexp = 2879;
-	long int priexp = -1;
-	long int rsanum = powermod(testnumber,pubexp,mod);
-	long int temp = rsanum;
-	long int temp1 = 1;
+	mpz_t testnumber;
+	mpz_init_set_ui(testnumber,2);
+	mpz_t testnumber2;
+	mpz_init_set_ui(testnumber2,3);
+	mpz_t mod;
+	mpz_init_set_str(mod,"145906768007583323230186939349070635292401872375357164399581871019873438799005358938369571402670149802121818086292467422828157022922076746906543401224889672472407926969987100581290103199317858753663710862357656510507883714297115637342788911463535102712032765166518411726859837988672111837205085526346618740053",10);
+	mpz_t pubexp;
+	mpz_init_set_str(pubexp,"65537",10);
+	mpz_t priexp;
+	mpz_init_set_str(priexp,"-1",10);
+	mpz_t rsanum;
+	mpz_init(rsanum);
+	powermod(rsanum,testnumber,pubexp,mod);
+	mpz_t temp;
+	mpz_t temp1;
+	mpz_init_set(temp,rsanum);
+	mpz_init_set_ui(temp1,1);
+	mpz_t result;
+	mpz_init(result);
 	bool done = false;
 	
 	while(!done) {
-		temp = multmod(temp,rsanum,mod);
-		temp1++;
-		if(temp==testnumber) {
-						
-			if(powermod(rsanum,temp1,mod)==testnumber){
-				//std::cout<<temp1<<std::endl;
+		multmod(temp,temp,rsanum,mod);
+		mpz_add_ui(temp1,temp1,1);
+		std::cout<<mpz_get_si(temp1)<<":"<<mpz_get_si(temp)<<"    "<<mpz_get_si(testnumber)<<std::endl;
+		if(mpz_cmp(temp,testnumber)==0) {
+			std::cout<<mpz_get_si(temp1)<<":"<<mpz_get_si(temp)<<"    "<<mpz_get_si(testnumber)<<std::endl;
+			powermod(result,rsanum,temp1,mod);			
+			if(mpz_cmp(result,testnumber)==0){
+				std::cout<<mpz_get_si(temp1)<<":"<<mpz_get_si(temp)<<"    "<<mpz_get_si(testnumber)<<std::endl;
 				if(test(pubexp,temp1,mod)){
-					priexp=temp1;
+					std::cout<<mpz_get_si(temp1)<<":"<<mpz_get_si(temp)<<"    "<<mpz_get_si(testnumber)<<std::endl;
+					mpz_set(priexp,temp1);
 					done=true;
 				}	
 			}
@@ -33,37 +49,57 @@ bool test(long int pubexp,long int priexp, long int mod);
 	std::cout<<"The d of ("<<mod<<","<<pubexp<<") is "<<priexp<<std::endl;
 	return 0;
 }
-long int multmod(long int num,long int num2,long int mod){
-	return (num*num2)%mod;
-
-
-}
-long int powermod(long int num,long int exp,long int mod){
-	long int orgnum=num;
-	for(long int i=0;i<exp-1;i++) {
-		num*=orgnum;
-		num%=mod;
-		
-
-	}
-	return num;
+void multmod(mpz_t result,mpz_t num,mpz_t num2,mpz_t mod){
+	
+	mpz_mul(result,num,num2);
+	mpz_mod(result,result,mod);
+	
 
 }
-bool test(long int pubexp,long int priexp, long int mod){
-	long int num = 2;
-	long int orgnum = -1;
-	long int rsanum = -1;
-	for(long int i=0;i<mod-2;i++){
-		orgnum=num;
-		rsanum = powermod(orgnum,pubexp,mod);
+void powermod(mpz_t result,mpz_t num,mpz_t exp,mpz_t mod){
+	mpz_powm(result,num,exp,mod);
+	
+
+}
+bool test(mpz_t pubexp,mpz_t priexp, mpz_t mod){
+	mpz_t num;
+	mpz_init_set_ui(num,2);
+	mpz_t orgnum;
+	mpz_init_set_si(orgnum,-1);
+	mpz_t rsanum;
+	mpz_init_set_si(rsanum,-1);
+	mpz_t i;
+	mpz_init_set_ui(i,0);
+	mpz_t newmod;
+	mpz_init(newmod);
+	mpz_sub_ui(newmod,mod,2);
+	mpz_t result;
+	mpz_init(result);
+	
+	for(;mpz_cmp(i,newmod)<0;mpz_add_ui(i,i,1)){
+		mpz_set(orgnum,num);
+		powermod(rsanum,orgnum,pubexp,mod);
 		//std::cout<<num<<std::endl;
-		if(powermod(rsanum,priexp,mod)!=orgnum){
-
+		powermod(result,rsanum,priexp,mod);
+		if(mpz_cmp(result,orgnum)!=0){
+			mpz_clear(num);
+			mpz_clear(orgnum);
+			mpz_clear(i);
+			mpz_clear(rsanum);
+			mpz_clear(newmod);
+			mpz_clear(result);
 			return false;
 		}
-		num++;
+		
+		mpz_add_ui(num,num,1);
 
 	}
+	mpz_clear(num);
+	mpz_clear(orgnum);
+	mpz_clear(i);
+	mpz_clear(rsanum);
+	mpz_clear(newmod);
+	mpz_clear(result);
 	return true;
 
 
